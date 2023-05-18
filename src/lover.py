@@ -15,15 +15,15 @@ class Lover:
         else:
             return str(self.ID) + ", single"
 
-    def married(self):
+    def get_married(self):
         return self.marriage_status
 
-    def id_num(self):
+    def get_id_num(self):
         return self.ID
 
-    def history(self):
+    def get_history(self):
         return self.history
 
-    def attraction_list(self):
+    def get_attraction_list(self):
         return self.attraction
 

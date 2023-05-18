@@ -1,64 +1,75 @@
-# Sabin, Ryan, Gary, Ellie, Davis, Alex
-# Last Chances Project
-# April 30, 2023
-
 from lover import Lover
 import random
+import numpy as np
+import matplotlib.pyplot as plt
 
-
-def main():
+def main(attractionDist, num_population, num_rounds):
     # initializations
     attraction = []
     lovers = []
-    single = set()
     married = set()
     THRESHOLD = 0.7
-    POPULATION = 100
-    ROUNDS = 500
+    POPULATION = num_population
+    ROUNDS = num_rounds
 
-    for i in range(1, POPULATION + 1):
-        attraction.append(i / 100)
-
-    for i in range(0, POPULATION):
+    for _ in range(POPULATION):
+        if attractionDist == "uniform":
+            attraction.append(np.random.uniform(0, 1, POPULATION))
+        elif attractionDist == "normal":
+            attraction.append(np.random.normal(0.5, 0.1, POPULATION))
+        elif attractionDist == "exponential":
+            attraction.append(np.random.exponential(0.5, POPULATION))
+            
+    # Flatten attraction list
+    attraction = np.array(attraction).flatten()
+    
+    # Order the attraction list
+    attraction.sort()
+    
+    for i in range(POPULATION):
         random.shuffle(attraction)
-        clone = attraction.copy()
-        love = Lover(i, [], False, clone)
+        love = Lover(i, [], False, attraction.copy())
         lovers.append(love)
-        single.add(love)
+        
+    # Create a list of single individuals (all individuals single at start)
+    singles = lovers.copy()
+    
+    # Create an array for number of married people each round
+    num_married = []
 
-    runs = 0
-    while True:
-        still_single = set()
-        still_single.clear()
+    # ROUNDS
+    for _ in range(ROUNDS):
+        # Safety check, if less than 2 singles, break the loop
+        if len(singles) < 2:
+            break
 
-        for i in range(1, (len(single) // 2) + 1):
-            lover1 = single.pop()
-            id1 = lover1.id_num()
+        paired_singles = []
+        
+        # Loop through each single person
+        while len(singles) >= 2:
+            lover1, lover2 = random.sample(singles, 2)
 
-            lover2 = single.pop()
-            id2 = lover2.id_num()
-
-            lover1.history.append(id1)
-            lover2.history.append(id2)
-
-            if (
-                lover1.attraction_list()[id2] > THRESHOLD
-                and lover2.attraction_list()[id1] > THRESHOLD
-            ):
+            # Check if the mutual attraction is above the threshold
+            if lover1.attraction[lover2.ID] > THRESHOLD and lover2.attraction[lover1.ID] > THRESHOLD:
+                lover1.marriage_status = True
+                lover2.marriage_status = True
                 married.add(lover1)
                 married.add(lover2)
+                singles.remove(lover1)
+                singles.remove(lover2)
             else:
-                still_single.add(lover1)
-                still_single.add(lover2)
+                paired_singles.append(lover1)
+                paired_singles.append(lover2)
+                singles.remove(lover1)
+                singles.remove(lover2)
 
-        # print("Single: " + str(single))
-        # print("Married: " + str(married))
-        # print("Still Single: " + str(still_single))
-        single = still_single.copy()
-        runs += 1
-        if runs > ROUNDS:
-            break
-    print(len(married))
+        singles = paired_singles.copy()  # Reassign remaining singles for next round
+        num_married.append(len(married))
+
+    print(num_married)
+    print("Number of single people: " + str(len(singles)))
+    print("Number of married people: " + str(len(married)))
 
 
-main()
+
+main("uniform", 100, 100)
