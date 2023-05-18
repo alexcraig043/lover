@@ -8,7 +8,7 @@ def main(attractionDist, num_population, num_rounds):
     attraction = []
     lovers = []
     married = set()
-    THRESHOLD = 0.7
+    THRESHOLD = 0.8
     POPULATION = num_population
     ROUNDS = num_rounds
 
@@ -36,6 +36,7 @@ def main(attractionDist, num_population, num_rounds):
     
     # Create an array for number of married people each round
     num_married = []
+    num_married.append(0)
 
     # ROUNDS
     for _ in range(ROUNDS):
@@ -64,9 +65,37 @@ def main(attractionDist, num_population, num_rounds):
                 singles.remove(lover2)
 
         singles = paired_singles.copy()  # Reassign remaining singles for next round
-        num_married.append(len(married))
+        num_married.append(len(married)) # Add number of married people to array
+        
+# Plot the number of married people per round
+    x = np.arange(0, ROUNDS + 1)
+    fig, ax1 = plt.subplots(figsize=(10, 6), dpi=200)
 
-    print(num_married)
+    ax1.set_xlabel('Round')
+    ax1.set_ylabel('Number of married people')
+    ax1.plot(x, num_married)
+    ax1.tick_params(axis='y')
+    ax1.set_xlim(0, ROUNDS)
+    ax1.set_ylim(0, POPULATION)
+    ax1.grid(True)
+    
+    # instantiate a second axes that shares the same x-axis
+    ax2 = ax1.twinx()
+    ax2.set_ylabel('Proportion of married people')
+    ax2.plot(x, np.array(num_married) / POPULATION)
+    ax2.tick_params(axis='y')
+    ax2.set_ylim(0, 1)
+    
+    # Adjust the layout
+    fig.tight_layout()  
+    # Add some margin
+    fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1) 
+
+    plt.title('Number of Married People Per Round')
+    fig.savefig('./src/figures/num_married.png')
+    plt.close()
+    
+    # print(num_married)
     print("Number of single people: " + str(len(singles)))
     print("Number of married people: " + str(len(married)))
 

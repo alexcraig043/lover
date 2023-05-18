@@ -1,7 +1,3 @@
-# Sabin Hart
-# Create the Lover class
-# April 30, 2023
-
 class Lover:
     def __init__(self, ID, history, marriage_status, attraction):
         self.ID = int(ID)
@@ -26,4 +22,3 @@ class Lover:
 
     def get_attraction_list(self):
         return self.attraction
-
