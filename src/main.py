@@ -16,15 +16,25 @@ def run_simulation(attractionDist, num_population, num_rounds, threshold, plot):
 
     for _ in range(POPULATION):
         if attractionDist == "Uniform":
-            attraction.append(np.random.uniform(0, 1, POPULATION))
+            # Sample a random attraction distribution for each person
+            random_dist = np.random.uniform(0, 1, POPULATION)
+            # Append the attraction distribution to the list of attraction distributions
+            attraction.append(random_dist)
         elif attractionDist == "Normal":
-            attraction.append(np.random.normal(0.5, 0.1, POPULATION))
+            # Sample a random attraction distribution for each person
+            random_dist = np.random.normal(0.5, 0.1, POPULATION)
             # Scale the attraction to be between 0 and 1
-            attraction[-1] = (attraction[-1] - min(attraction[-1])) / (max(attraction[-1]) - min(attraction[-1]))
+            random_dist = (random_dist - min(random_dist)) / (max(random_dist) - min(random_dist))
+            # Append the attraction distribution to the list of attraction distributions
+            attraction.append(random_dist)
+            # Scale the attraction to be between 0 and 1
         elif attractionDist == "Exponential":
-            attraction.append(np.random.exponential(0.5, POPULATION))
+            # Sample a random attraction distribution for each person
+            random_dist = np.random.exponential(0.5, POPULATION)
             # Scale the attraction to be between 0 and 1
-            attraction[-1] = (attraction[-1] - min(attraction[-1])) / (max(attraction[-1]) - min(attraction[-1]))
+            random_dist = (random_dist - min(random_dist)) / (max(random_dist) - min(random_dist))
+            # Append the attraction distribution to the list of attraction distributions
+            attraction.append(random_dist)
             
     for i in range(POPULATION):
         lover_attraction = attraction[i].copy()
@@ -188,7 +198,7 @@ def plot_agg_simulations(avg_num_married, thresholds, num_rounds, attractionDist
     plt.close()
    
 # Compute and plot the total error for each threshold
-def compute_total_error(avg_num_married, thresholds, num_population, attractionDist):
+def compute_total_error(avg_num_married, thresholds, num_population, attractionDist, threshold_weight = 1, married_prop_weight = 1):
     # Instantiate an array to store the total error for each threshold
     total_error = []
     
@@ -203,7 +213,7 @@ def compute_total_error(avg_num_married, thresholds, num_population, attractionD
         married_prop_error = 1 - married_prop
         
         # Total error
-        total_error.append(threshold_error + married_prop_error)
+        total_error.append(threshold_weight * threshold_error + married_prop_weight * married_prop_error)
         
     # Get minimum total error
     min_total_error = min(total_error)
@@ -216,7 +226,7 @@ def compute_total_error(avg_num_married, thresholds, num_population, attractionD
     
     # Set ylim
     if (max_total_error > 1):
-        ylim = max_total_error
+        ylim = max_total_error + .05
     else:
         ylim = 1
     
@@ -257,4 +267,4 @@ def compute_total_error(avg_num_married, thresholds, num_population, attractionD
         
     return total_error
 
-aggregate_simulations("Uniform", num_population = 100, num_rounds= 100, num_simulations= 500, plot = True, read_csv = True, write_csv = False)
+aggregate_simulations("Normal", num_population = 100, num_rounds= 100, num_simulations= 25, plot = True, read_csv = True, write_csv = False)
