@@ -3,38 +3,57 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import scipy
 
 # Compute the total error for each threshold
-def run_simulation(attractionDist, num_population, num_rounds, threshold, plot):
+def run_simulation(attractionDist, num_population, num_rounds, threshold, plot = False):
     # initializations
     attraction = []
     lovers = []
     married = set()
-    THRESHOLD = threshold
     POPULATION = num_population
     ROUNDS = num_rounds
-
+    THRESHOLD = threshold
+    
     for _ in range(POPULATION):
         if attractionDist == "Uniform":
             # Sample a random attraction distribution for each person
             random_dist = np.random.uniform(0, 1, POPULATION)
+            
+            # Scale the attraction distribution to be between 0 and 1
+            # random_dist = (random_dist - np.min(random_dist)) / (np.max(random_dist) - np.min(random_dist))
+            
             # Append the attraction distribution to the list of attraction distributions
             attraction.append(random_dist)
+            
+            # Set the threshold (converted from % to cdf)
+            THRESHOLD = scipy.stats.uniform.ppf(threshold, 0, 1) # Unnecessary, since threshold is already in cdf
+            
         elif attractionDist == "Normal":
             # Sample a random attraction distribution for each person
-            random_dist = np.random.normal(0.5, 0.1, POPULATION)
-            # Scale the attraction to be between 0 and 1
-            random_dist = (random_dist - min(random_dist)) / (max(random_dist) - min(random_dist))
+            random_dist = np.random.normal(0, 1, POPULATION)
+            
+            # Scale the attraction distribution to be between 0 and 1
+            # random_dist = (random_dist - np.min(random_dist)) / (np.max(random_dist) - np.min(random_dist))
+            
             # Append the attraction distribution to the list of attraction distributions
             attraction.append(random_dist)
-            # Scale the attraction to be between 0 and 1
+            
+            # Set the threshold (converted from % to cdf)
+            THRESHOLD = scipy.stats.norm.ppf(threshold, 0, 1)
+            
         elif attractionDist == "Exponential":
             # Sample a random attraction distribution for each person
-            random_dist = np.random.exponential(0.5, POPULATION)
-            # Scale the attraction to be between 0 and 1
-            random_dist = (random_dist - min(random_dist)) / (max(random_dist) - min(random_dist))
+            random_dist = np.random.exponential(.25, POPULATION)
+            
+            # Scale the attraction distribution to be between 0 and 1
+            # random_dist = random_dist / max(random_dist)
+            
             # Append the attraction distribution to the list of attraction distributions
             attraction.append(random_dist)
+            
+            # Set the threshold (converted from % to cdf)
+            THRESHOLD = scipy.stats.expon.ppf(threshold, scale = 1)
             
     for i in range(POPULATION):
         lover_attraction = attraction[i].copy()
@@ -78,7 +97,7 @@ def run_simulation(attractionDist, num_population, num_rounds, threshold, plot):
         num_married.append(len(married)) # Add number of married people to array
         
     if (plot):
-        plot_simulation(num_married, ROUNDS, POPULATION, attractionDist, THRESHOLD)
+        plot_simulation(num_married, ROUNDS, POPULATION, attractionDist, threshold)
     
     # print(num_married)
     # print("Number of single people: " + str(len(singles)))
@@ -117,7 +136,8 @@ def plot_simulation(num_married, ROUNDS, POPULATION, attractionDist, threshold):
     fig.savefig(file_name)
     plt.close()
 
-# run_simulation("Uniform", 100, 100, 0.8, True)
+# run_simulation("Exponential", 100, 100, .75, True)
+run_simulation("Uniform", 100, 100, .75, True)
 
 # Compute the average number of married people for each threshold
 def aggregate_simulations(attractionDist, num_population, num_rounds, num_simulations, plot, read_csv = False, write_csv = False):
@@ -198,7 +218,7 @@ def plot_agg_simulations(avg_num_married, thresholds, num_rounds, attractionDist
     plt.close()
    
 # Compute and plot the total error for each threshold
-def compute_total_error(avg_num_married, thresholds, num_population, attractionDist, threshold_weight = 1, married_prop_weight = 1):
+def compute_total_error(avg_num_married, thresholds, num_population, attractionDist, threshold_weight = 1, married_prop_weight = 1, plot = True):
     # Instantiate an array to store the total error for each threshold
     total_error = []
     
@@ -209,6 +229,7 @@ def compute_total_error(avg_num_married, thresholds, num_population, attractionD
         
         # Proportion of people married at threshold
         married_prop = avg_num_married[i] / num_population
+        
         # Married proportion error
         married_prop_error = 1 - married_prop
         
@@ -224,13 +245,20 @@ def compute_total_error(avg_num_married, thresholds, num_population, attractionD
     # Get maximum total error
     max_total_error = max(total_error)
     
+    if (plot == True):
+        plot_total_error(total_error, thresholds, min_total_error, min_total_error_threshold, max_total_error, max_total_error)
+        
+    return total_error
+
+def plot_total_error(total_error, thresholds, min_total_error, min_total_error_threshold, max_total_error, attractionDist):
+    # Plot the total error
+        
     # Set ylim
     if (max_total_error > 1):
         ylim = max_total_error + .05
     else:
         ylim = 1
     
-    # Plot the total error
     x = thresholds
     fig, ax1 = plt.subplots(figsize=(10, 6), dpi=200)
     ylab = "Total error"
@@ -264,7 +292,5 @@ def compute_total_error(avg_num_married, thresholds, num_population, attractionD
     file_name = "./src/figures/total_error_" + attractionDist + ".png"
     fig.savefig(file_name)
     plt.close()
-        
-    return total_error
 
-aggregate_simulations("Normal", num_population = 100, num_rounds= 100, num_simulations= 25, plot = True, read_csv = True, write_csv = False)
+# aggregate_simulations("Exponential", num_population = 100, num_rounds = 100, num_simulations = 250, plot = True, read_csv = False, write_csv = False)
