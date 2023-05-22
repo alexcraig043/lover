@@ -13,7 +13,14 @@ def run_simulation(attractionDist, num_population, num_rounds, threshold, plot =
     married = set()
     POPULATION = num_population
     ROUNDS = num_rounds
-    THRESHOLD = threshold
+    THRESHOLD = None
+    
+    if attractionDist == "Uniform":
+        THRESHOLD = scipy.stats.uniform.ppf(threshold, 0, 1)
+    elif attractionDist == "Normal":
+        THRESHOLD = scipy.stats.norm.ppf(threshold, 0, 1)
+    elif attractionDist == "Exponential":
+        THRESHOLD = scipy.stats.expon.ppf(threshold, scale = 1)
     
     for _ in range(POPULATION):
         if attractionDist == "Uniform":
@@ -26,9 +33,6 @@ def run_simulation(attractionDist, num_population, num_rounds, threshold, plot =
             # Append the attraction distribution to the list of attraction distributions
             attraction.append(random_dist)
             
-            # Set the threshold (converted from % to cdf)
-            THRESHOLD = scipy.stats.uniform.ppf(threshold, 0, 1) # Unnecessary, since threshold is already in cdf
-            
         elif attractionDist == "Normal":
             # Sample a random attraction distribution for each person
             random_dist = np.random.normal(0, 1, POPULATION)
@@ -39,21 +43,15 @@ def run_simulation(attractionDist, num_population, num_rounds, threshold, plot =
             # Append the attraction distribution to the list of attraction distributions
             attraction.append(random_dist)
             
-            # Set the threshold (converted from % to cdf)
-            THRESHOLD = scipy.stats.norm.ppf(threshold, 0, 1)
-            
         elif attractionDist == "Exponential":
             # Sample a random attraction distribution for each person
-            random_dist = np.random.exponential(.25, POPULATION)
+            random_dist = np.random.exponential(1, POPULATION)
             
             # Scale the attraction distribution to be between 0 and 1
             # random_dist = random_dist / max(random_dist)
             
             # Append the attraction distribution to the list of attraction distributions
             attraction.append(random_dist)
-            
-            # Set the threshold (converted from % to cdf)
-            THRESHOLD = scipy.stats.expon.ppf(threshold, scale = 1)
             
     for i in range(POPULATION):
         lover_attraction = attraction[i].copy()
@@ -137,7 +135,7 @@ def plot_simulation(num_married, ROUNDS, POPULATION, attractionDist, threshold):
     plt.close()
 
 # run_simulation("Exponential", 100, 100, .75, True)
-run_simulation("Uniform", 100, 100, .75, True)
+# run_simulation("Uniform", 100, 100, .75, True)
 
 # Compute the average number of married people for each threshold
 def aggregate_simulations(attractionDist, num_population, num_rounds, num_simulations, plot, read_csv = False, write_csv = False):
@@ -246,7 +244,7 @@ def compute_total_error(avg_num_married, thresholds, num_population, attractionD
     max_total_error = max(total_error)
     
     if (plot == True):
-        plot_total_error(total_error, thresholds, min_total_error, min_total_error_threshold, max_total_error, max_total_error)
+        plot_total_error(total_error, thresholds, min_total_error, min_total_error_threshold, max_total_error, attractionDist)
         
     return total_error
 
@@ -293,4 +291,4 @@ def plot_total_error(total_error, thresholds, min_total_error, min_total_error_t
     fig.savefig(file_name)
     plt.close()
 
-# aggregate_simulations("Exponential", num_population = 100, num_rounds = 100, num_simulations = 250, plot = True, read_csv = False, write_csv = False)
+aggregate_simulations("Exponential", num_population = 100, num_rounds = 100, num_simulations = 25, plot = True, read_csv = False, write_csv = False)
