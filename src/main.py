@@ -94,6 +94,10 @@ def run_simulation(attractionDist, num_population, num_rounds, threshold, plot =
         singles = paired_singles.copy()  # Reassign remaining singles for next round
         num_married.append(len(married)) # Add number of married people to array
         
+    # Fill in the rest of the array with the last value
+    while len(num_married) < num_rounds + 1:
+        num_married.append(num_married[-1])
+        
     if (plot):
         plot_simulation(num_married, ROUNDS, POPULATION, attractionDist, threshold)
     
@@ -134,11 +138,10 @@ def plot_simulation(num_married, ROUNDS, POPULATION, attractionDist, threshold):
     fig.savefig(file_name)
     plt.close()
 
-# run_simulation("Exponential", 100, 100, .75, True)
-# run_simulation("Uniform", 100, 100, .75, True)
+# run_simulation("Uniform", 1000, 150, .75, True)
 
 # Compute the average number of married people for each threshold
-def aggregate_simulations(attractionDist, num_population, num_rounds, num_simulations, plot, read_csv = False, write_csv = False):
+def aggregate_simulations(attractionDist, num_population, num_rounds, num_simulations, plot, round_to_plot, read_csv = False, write_csv = False):
     # Make array of thresholds from 0 to 1 in increments of 0.01
     thresholds = np.arange(0, 1.01, 0.01)
     
@@ -152,7 +155,7 @@ def aggregate_simulations(attractionDist, num_population, num_rounds, num_simula
     else: # Else, run the simulation
         # For each threshold
         for threshold in thresholds:
-            print("Threshold: " + str(threshold))
+            print(attractionDist + " Threshold: " + str(threshold))
             # Instantiate an array to store the number of married people for each simulation
             num_married_threshold = []
             
@@ -160,19 +163,23 @@ def aggregate_simulations(attractionDist, num_population, num_rounds, num_simula
             for _ in range(num_simulations):
                 # Run the simulation
                 num_married_threshold_sim = run_simulation(attractionDist, num_population, num_rounds, threshold, False)
-                # Append the number of married people from the last round to the array
-                num_married_threshold.append(num_married_threshold_sim[-1])
+                # Append the number of married people for each round to the array
+                num_married_threshold.append(num_married_threshold_sim)
                 
-            # Find the average number of people married for threshold
-            avg_num_married_threshold = np.mean(num_married_threshold)
+            # Find the average number of people married for each round
+            avg_num_married_threshold = np.mean(num_married_threshold, axis=0)
+            
             # Append the average number of people married to the array
             avg_num_married.append(avg_num_married_threshold)
         
+        # convert avg_num_married to 2d list
+        avg_num_married = np.array(avg_num_married).tolist()
+        
     # Plot the average number of married people per round for each threshold
     if (plot):
-        plot_agg_simulations(avg_num_married, thresholds, num_rounds, attractionDist)
+        plot_agg_simulations(avg_num_married, thresholds, num_population, num_rounds, attractionDist, round_to_plot)
         # Compute the total error
-        compute_total_error(avg_num_married, thresholds, num_population, attractionDist)
+        # compute_total_error(avg_num_married, thresholds, num_population, attractionDist, round_to_plot)
         
     # Write the avg_num_married to a csv file
     if (write_csv):
@@ -182,7 +189,10 @@ def aggregate_simulations(attractionDist, num_population, num_rounds, num_simula
     return avg_num_married
         
 # Plot the average number of married people per round for each threshold
-def plot_agg_simulations(avg_num_married, thresholds, num_rounds, attractionDist):
+def plot_agg_simulations(avg_num_married, thresholds, num_population, num_rounds, attractionDist, round_to_plot):
+    # Get an array of the round_to_plot'th round for each threshold
+    avg_num_married = [avg_num_married[i][round_to_plot] for i in range(len(thresholds))]
+    
     # Plot the number of married people per round
     x = thresholds
     fig, ax1 = plt.subplots(figsize=(10, 6), dpi=200)
@@ -193,13 +203,13 @@ def plot_agg_simulations(avg_num_married, thresholds, num_rounds, attractionDist
     ax1.step(x, avg_num_married)
     ax1.tick_params(axis='y')
     ax1.set_xlim(0, 1)
-    ax1.set_ylim(0, 100)
+    ax1.set_ylim(0, num_population)
     ax1.grid(True)
     
     # Instantiate a second axes that shares the same x-axis
     ax2 = ax1.twinx()
     ax2.set_ylabel('Proportion of married people')
-    ax2.step(x, np.array(avg_num_married) / 100)
+    ax2.step(x, np.array(avg_num_married) / num_population)
     ax2.tick_params(axis='y')
     ax2.set_ylim(0, 1)
     
@@ -209,9 +219,9 @@ def plot_agg_simulations(avg_num_married, thresholds, num_rounds, attractionDist
     # Add some margin
     fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
     
-    title = "Average Number of Married People Per Round for " + attractionDist + " Attraction Distribution"
+    title = "Average Number of Married People Per Round for " + attractionDist + " Attraction Distribution For Round " + str(round_to_plot + 1) + " of " + str(num_rounds) + " Rounds"
     plt.title(title)
-    file_name = "./src/figures/avg_num_married_" + attractionDist + ".png"
+    file_name = "./src/figures/avg_num_married_" + attractionDist + "_round_" + str(round_to_plot) + ".png"
     fig.savefig(file_name)
     plt.close()
    
@@ -291,4 +301,4 @@ def plot_total_error(total_error, thresholds, min_total_error, min_total_error_t
     fig.savefig(file_name)
     plt.close()
 
-aggregate_simulations("Exponential", num_population = 100, num_rounds = 100, num_simulations = 25, plot = True, read_csv = False, write_csv = False)
+aggregate_simulations("Uniform", num_population = 100, num_rounds = 100, num_simulations = 5, plot = True, round_to_plot = 10, read_csv = False, write_csv = False)
