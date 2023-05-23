@@ -179,7 +179,7 @@ def aggregate_simulations(attractionDist, num_population, num_rounds, num_simula
     if (plot):
         plot_agg_simulations(avg_num_married, thresholds, num_population, num_rounds, attractionDist, round_to_plot)
         # Compute the total error
-        # compute_total_error(avg_num_married, thresholds, num_population, attractionDist, round_to_plot)
+        compute_total_error(avg_num_married, thresholds, num_population, attractionDist, round_to_plot = round_to_plot)
         
     # Write the avg_num_married to a csv file
     if (write_csv):
@@ -221,46 +221,73 @@ def plot_agg_simulations(avg_num_married, thresholds, num_population, num_rounds
     
     title = "Average Number of Married People Per Round for " + attractionDist + " Attraction Distribution For Round " + str(round_to_plot + 1) + " of " + str(num_rounds) + " Rounds"
     plt.title(title)
-    file_name = "./src/figures/avg_num_married_" + attractionDist + "_round_" + str(round_to_plot) + ".png"
+    file_name = "./src/figures/avg_num_married_" + attractionDist + "_round_" + str(round_to_plot + 1) + ".png"
     fig.savefig(file_name)
     plt.close()
    
 # Compute and plot the total error for each threshold
-def compute_total_error(avg_num_married, thresholds, num_population, attractionDist, threshold_weight = 1, married_prop_weight = 1, plot = True):
+def compute_total_error(avg_num_married, thresholds, num_population, attractionDist, threshold_weight = .99, married_prop_weight = 1, plot = True, round_to_plot = -1):
     # Instantiate an array to store the total error for each threshold
     total_error = []
     
     # For each threshold
     for i in range(len(thresholds)):
-        # Threshold error
+        # Calculate the threshold error
         threshold_error = 1 - thresholds[i]
         
-        # Proportion of people married at threshold
-        married_prop = avg_num_married[i] / num_population
+        # Weight the threshold error
+        threshold_error *= threshold_weight
         
-        # Married proportion error
-        married_prop_error = 1 - married_prop
+        # Define an array to store the total error for each round
+        total_error_threshold = []
         
-        # Total error
-        total_error.append(threshold_weight * threshold_error + married_prop_weight * married_prop_error)
+        # For each round
+        for r in range(len(avg_num_married[i])):
+            # Calculate the proportion of people married at threshold
+            married_prop = avg_num_married[i][r] / num_population
+            
+            # Calculate the married proportion error
+            married_prop_error = 1 - married_prop
+            # Weight the married proportion error
+            married_prop_error *= married_prop_weight
+            
+            # Calculate the total error
+            total_error_threshold.append(threshold_error + married_prop_error)
         
-    # Get minimum total error
-    min_total_error = min(total_error)
+        # Add the total error for each round to the array
+        total_error.append(total_error_threshold)
     
-    # Get threshold with minimum total error
-    min_total_error_threshold = thresholds[total_error.index(min_total_error)]
+    # Define an array of length num_rounds to store the minimum total error for each round
+    min_total_error = [-1] * len(avg_num_married[0])
     
-    # Get maximum total error
-    max_total_error = max(total_error)
+    # Define an array of length num_rounds to store the maximum total error for each round
+    max_total_error = [-1] * len(avg_num_married[0])
     
+    # Define an array of length num_rounds to store the threshold with the minimum total error for each round
+    min_total_error_threshold = [-1] * len(avg_num_married[0])
+    
+    for i in range(len(total_error)):
+        for r in range(len(total_error[i])):
+            if (min_total_error[r] == -1 or total_error[i][r] < min_total_error[r]):
+                min_total_error[r] = total_error[i][r]
+                min_total_error_threshold[r] = thresholds[i]
+            if (max_total_error[r] == -1 or total_error[i][r] > max_total_error[r]):
+                max_total_error[r] = total_error[i][r]
+                
     if (plot == True):
-        plot_total_error(total_error, thresholds, min_total_error, min_total_error_threshold, max_total_error, attractionDist)
+        plot_total_error(total_error, thresholds, min_total_error, min_total_error_threshold, max_total_error, attractionDist, round_to_plot)
+        plot_optimal_thresholds(min_total_error_threshold, attractionDist)
         
-    return total_error
+    return min_total_error_threshold
+        
+def plot_total_error(total_error, thresholds, min_total_error, min_total_error_threshold, max_total_error, attractionDist, round_to_plot = -1):
+    # Get an array of the round_to_plot'th round for each total error
+    total_error = [total_error[i][round_to_plot] for i in range(len(thresholds))]
+    
+    min_total_error = min_total_error[round_to_plot]
+    min_total_error_threshold = min_total_error_threshold[round_to_plot]
+    max_total_error = max_total_error[round_to_plot]
 
-def plot_total_error(total_error, thresholds, min_total_error, min_total_error_threshold, max_total_error, attractionDist):
-    # Plot the total error
-        
     # Set ylim
     if (max_total_error > 1):
         ylim = max_total_error + .05
@@ -295,10 +322,43 @@ def plot_total_error(total_error, thresholds, min_total_error, min_total_error_t
     # Add some margin
     fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
     
-    title = "Total Error Per Threshold for " + attractionDist + " Attraction Distribution"
+    title = "Total Error Per Threshold for " + attractionDist + " Attraction Distribution" + " For Round " + str(round_to_plot + 1) + " of " + str(len(total_error) - 1) + " Rounds"
     plt.title(title)
-    file_name = "./src/figures/total_error_" + attractionDist + ".png"
+    file_name = "./src/figures/total_error_" + attractionDist + "_round_" + str(round_to_plot + 1) + ".png"
     fig.savefig(file_name)
     plt.close()
 
-aggregate_simulations("Uniform", num_population = 100, num_rounds = 100, num_simulations = 5, plot = True, round_to_plot = 10, read_csv = False, write_csv = False)
+def plot_optimal_thresholds(min_total_error_threshold, attractionDist):
+    # Set x to be rounds going from 1 to len(min_total_error_threshold)
+    x = [i + 1 for i in range(len(min_total_error_threshold))]
+    x.pop(0)
+    
+    # Set y to be the threshold with the minimum total error for each round
+    y = min_total_error_threshold
+    y.pop(0)
+    
+    # Set ylim
+    ylim = 1
+    
+    # Plot the threshold with the minimum total error for each round
+    fig, ax1 = plt.subplots(figsize=(10, 6), dpi=200)
+    ax1.set_xlabel("Round")
+    ax1.set_ylabel("Optimal Threshold" )
+    ax1.step(x, y)
+    ax1.tick_params(axis='y')
+    ax1.set_xlim(0, len(min_total_error_threshold))
+    ax1.set_ylim(0, ylim)
+    ax1.grid(True)
+    
+    # Adjust the layout
+    fig.tight_layout()
+    # Add some margin
+    fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
+    
+    title = "Optimal Threshold Per Round for " + attractionDist + " Attraction Distribution"
+    plt.title(title)
+    file_name = "./src/figures/optimal_threshold_" + attractionDist + ".png"
+    fig.savefig(file_name)
+    plt.close()
+
+aggregate_simulations("Uniform", num_population = 100, num_rounds = 100, num_simulations = 100, plot = True, round_to_plot = 1, read_csv = False, write_csv = False)
