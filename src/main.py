@@ -364,4 +364,4 @@ def plot_optimal_thresholds(min_total_error_threshold, attractionDist):
     fig.savefig(file_name)
     plt.close()
 
-aggregate_simulations("Uniform", num_population = 1000, num_rounds = 150, num_simulations = 100, plot = True, round_to_plot = 150, read_csv = False, write_csv = False)
+aggregate_simulations("Uniform", num_population = 100, num_rounds = 100, num_simulations = 100, plot = True, round_to_plot = 100, read_csv = False, write_csv = False)
