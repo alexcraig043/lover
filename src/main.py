@@ -138,10 +138,13 @@ def plot_simulation(num_married, ROUNDS, POPULATION, attractionDist, threshold):
     fig.savefig(file_name)
     plt.close()
 
-# run_simulation("Uniform", 1000, 150, .75, True)
+# run_simulation("Uniform", 100, 100, .35, True)
 
 # Compute the average number of married people for each threshold
 def aggregate_simulations(attractionDist, num_population, num_rounds, num_simulations, plot, round_to_plot, read_csv = False, write_csv = False):
+    # Set the round to Plot
+    round_to_plot = round_to_plot - 1
+    
     # Make array of thresholds from 0 to 1 in increments of 0.01
     thresholds = np.arange(0, 1.01, 0.01)
     
@@ -219,14 +222,14 @@ def plot_agg_simulations(avg_num_married, thresholds, num_population, num_rounds
     # Add some margin
     fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
     
-    title = "Average Number of Married People Per Round for " + attractionDist + " Attraction Distribution For Round " + str(round_to_plot + 1) + " of " + str(num_rounds) + " Rounds"
+    title = "Average Number of Married People Per Threshold for " + attractionDist + " Attraction Distribution For Round " + str(round_to_plot + 1) + " of " + str(num_rounds) + " Rounds"
     plt.title(title)
     file_name = "./src/figures/avg_num_married_" + attractionDist + "_round_" + str(round_to_plot + 1) + ".png"
     fig.savefig(file_name)
     plt.close()
    
 # Compute and plot the total error for each threshold
-def compute_total_error(avg_num_married, thresholds, num_population, attractionDist, threshold_weight = .99, married_prop_weight = 1, plot = True, round_to_plot = -1):
+def compute_total_error(avg_num_married, thresholds, num_population, attractionDist, threshold_weight = 1, married_prop_weight = 1, plot = True, round_to_plot = -1):
     # Instantiate an array to store the total error for each threshold
     total_error = []
     
@@ -361,4 +364,4 @@ def plot_optimal_thresholds(min_total_error_threshold, attractionDist):
     fig.savefig(file_name)
     plt.close()
 
-aggregate_simulations("Uniform", num_population = 100, num_rounds = 100, num_simulations = 100, plot = True, round_to_plot = 1, read_csv = False, write_csv = False)
+aggregate_simulations("Uniform", num_population = 1000, num_rounds = 150, num_simulations = 100, plot = True, round_to_plot = 150, read_csv = False, write_csv = False)
